@@ -1,0 +1,62 @@
+version: "3"
+services:
+  api:
+    container_name: api.local
+    build:
+      context: .
+      dockerfile: docker/api/environments/development/Dockerfile
+    environment:
+      DB_USER: "root"
+      DB_PASSWORD: "password"
+      DB_CONTAINER_NAME: "db"
+      DB_PORT: "3306"
+      DB_NAME: "development"
+    ports:
+      - 1323:1323
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./server:/app:cached
+    depends_on:
+      - db
+    command: ["/app/start.sh"]
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger-ui.local
+    environment:
+      SWAGGER_JSON: /etc/swagger/swagger.yaml
+    ports:
+      - 8080:8080
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./documents/gen/http/openapi.yaml:/etc/swagger/swagger.yaml
+
+  swagger-editor:
+    container_name: swagger-editor.local
+    build:
+      context: .
+      dockerfile: docker/document/Dockerfile
+    ports:
+      - 8081:8081
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./documents:/app:cached
+
+  db:
+    container_name: db
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      TZ: Asia/Tokyo
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql_volume:/var/lib/mysql
+      -  ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+
+volumes:
+  mysql_volume:
+    driver: local
